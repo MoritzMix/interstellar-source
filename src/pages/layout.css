@@ -1,0 +1,74 @@
+#App {
+  display: grid;
+  grid-template-columns: auto;
+  grid-template-rows: 100px 1fr 100px;
+  grid-template-areas:
+    "header"
+    "content"
+    "footer";
+  height: 100vh;
+}
+
+#starmap line,
+#starmap circle,
+#starmap text {
+  transition: opacity 0.15s;
+}
+
+#starmap text {
+  font-family: "Orbitron";
+}
+
+.planetList {
+  align-items: flex-start;
+  display: flex;
+  flex-wrap: wrap;
+  height: 100%;
+  list-style: none;
+  margin: 0;
+}
+
+.planetList li {
+  margin-right: 20px;
+  opacity: 1;
+  animation: fadeIn .3s;
+}
+
+@keyframes fadeIn{
+  0% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+.material-icons {
+  font-family: "Material Icons";
+  font-size: 24px;
+}
+
+.button {
+  background: #6eab1b;
+  border: 2px solid #6eab1b;
+  color: #3b7b00;
+  cursor: pointer;
+  font-family: "Orbitron";
+  font-size: 30px;
+  outline-color: transparent;
+  padding: 10px;
+  transition: background 0.2s, color 0.2s;
+}
+
+.button:hover {
+  background: #3b7b00;
+  color: #6eab1b;
+}
+
+body {
+  margin: 0;
+}
+
+* {
+  box-sizing: border-box;
+}
