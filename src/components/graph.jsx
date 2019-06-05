@@ -6,11 +6,13 @@ import { AppConsumer } from "../data/store"
 import appEmitter from "../helper/appEmitter"
 import { Graph, findPath } from "../functions/dijkstra"
 
-let Subscription = null;
-let Subscription2 = null;
 
-const startNodeColor = "blue";
-const endNodeColor = "#479030";
+import "./graph.css"
+
+
+let Subscription_Path = null,
+    Subscription_Start = null,
+    Subscription_End = null;
 
 class GraphComponent extends Component {
 
@@ -24,10 +26,9 @@ class GraphComponent extends Component {
     }
 
     componentWillMount() {
-        Subscription = appEmitter.addListener('startButton', (payload) => {
+        Subscription_Path = appEmitter.addListener('startButton', () => {
             this.drawPath();
         });
-        console.log("refs", this.refs)
     }
 
     componentDidMount() {
@@ -35,48 +36,43 @@ class GraphComponent extends Component {
         let container = this.svgContainer.current
         this.drawChart(data.dataJson, container, 1);
 
+        function findGroup(label) {
+            return document.querySelectorAll(`[data-label="${label}"]`)
+        }
 
-        Subscription2 = appEmitter.addListener('changeEnd', (payload) => {
-            this.setState({ "endNode": payload });
-            let endPlanetNode = document.querySelector(`.${payload}`);
-
-
-
-
-            endPlanetNode.setAttribute("opacity", 1);
-            endPlanetNode.setAttribute("r", 5);
-            endPlanetNode.setAttribute("fill", endNodeColor);
-
-            endPlanetNode.parentNode.querySelector("text").setAttribute("opacity", 1);
-            endPlanetNode.parentNode.querySelector("text").setAttribute("fill", endNodeColor);
-
-
-            document.querySelector(`:not(.Erde)`).setAttribute("opacity", .1);
-            document.querySelector(`:not(Erde)`).setAttribute("r", .1);
-            document.querySelector(`:not(.Erde)`).parentNode.querySelector("text").setAttribute("opacity", 0);
+        Subscription_Start = appEmitter.addListener('changeStart', (payload) => {
+            this.setState({ "startNode": payload });
+            document.querySelectorAll(".activePlanet, .startPlanet, .activeLane").forEach(el => el.classList.remove("activePlanet", "startPlanet", "activeLane"));
+            findGroup(payload).forEach(el => el.classList.add("startPlanet"));
         });
 
+        Subscription_End = appEmitter.addListener('changeEnd', (payload) => {
+            this.setState({ "endNode": payload });
+            document.querySelectorAll(".activePlanet, .endPlanet, .activeLane").forEach(el => el.classList.remove("activePlanet", "endPlanet", "activeLane"));
+            findGroup(payload).forEach(el => el.classList.add("endPlanet"));
+        });
     }
 
     componentWillUnmount() {
-        Subscription.remove();
-        Subscription2.remove();
+        Subscription_Path.remove();
+        Subscription_Start.remove();
+        Subscription_End.remove();
     }
 
     drawPath() {
         const data = this.props.context;
 
-        console.log("state", this.state)
-        let nodes = data.dataJson.nodes,
+        let self = this,
+            nodes = data.dataJson.nodes,
             edges = data.dataJson.edges,
             startNode = this.state.startNode,
-            endNode = this.state.endNode || "b3-r7-r4nd7",
+            endNode = this.state.endNode,
 
             start = getPlanetByLabel(nodes, startNode),
             end = getPlanetByLabel(nodes, endNode),
             timer = new Date().getTime(),
             map = new Graph(),
-            steps = 60 / 300;   // 60fps, 0.3s
+            steps = 1200 / 60;   // 600ms / 60fps 
 
 
         function getPlanetByLabel(arr, label) {
@@ -89,62 +85,41 @@ class GraphComponent extends Component {
 
         let { path, cost } = findPath(map, start, end, timer);
 
-        let ref = this.svgContainer.current,
-            planets = ref.querySelectorAll(`circle:not(.${startNode}):not(.${endNode})`),
-            lanes = ref.querySelectorAll("line");
+        let ref = this.svgContainer.current;
 
-
-
-        planets.forEach(el => el.setAttribute("opacity", ".1"));
-        lanes.forEach(el => el.setAttribute("opacity", ".05"));
-
-        this.pushNode({ label: `Total Cost: ${cost.toFixed(4)}` });
         this.pushNode(nodes[path[0]]);
 
-        for (let i = 1; i < path.length; i++) {
-            /*
-                        var iterationCount = 0;
-                        var repeater;
-            
-                        function animate() {
-                            easing = easeInQuad(iterationCount, 0, width, 300);
-                            lok.setAttribute('style', 'left: ' + easing + 'px');
-                            iterationCount++;
-            
-                            if (iterationCount > 250) {
-                                cancelAnimationFrame(repeater);
-                            } else {
-                                repeater = requestAnimationFrame(animate);
-                            }
-                        }
-            
-                        runlock();
-            */
+        let iterationCount = 0,
+            i = 1;
 
-            //ToDo change setTimeout to requestAnimationFrame
-            setTimeout(() => {
+        function animate() {
+
+            if (iterationCount % steps === 0) {
+
                 let planet = ref.querySelector(`[data-id="${path[i]}"] circle`),
-                    //label = ref.querySelector(`[data-id="${path[i]}"] text`),
 
                     //Daten liegen als gerichteter Graph vor
                     lane = ref.querySelector(`[data-source="${path[i - 1]}"][data-target="${path[i]}"]`)
                         || ref.querySelector(`[data-source="${path[i]}"][data-target="${path[i - 1]}"]`);
 
-                planet.setAttribute("opacity", "1");
-                if (i < path.length - 1) { planet.setAttribute("r", "3"); }
-                lane.setAttribute("opacity", "1");
-                lane.setAttribute("stroke-width", ".5");
+                planet.classList.add("activePlanet");
+                lane.classList.add("activeLane");
+                self.pushNode(nodes[path[i]]);
 
-                this.pushNode(nodes[path[i]]);
+                i++;
+            }
+            iterationCount++;
 
-            }, i * 500);
+            if (i < path.length) {
+                window.requestAnimationFrame(animate);
+            } else {
+                self.pushNode({ label: `Total Cost: ${cost.toFixed(4)}` });
+            }
         }
+        window.requestAnimationFrame(animate);
     }
 
     drawChart(data, container, steps) {
-
-        let startNode = this.state.startNode,
-            endNode = this.state.endNode || "b3-r7-r4nd7";
 
         const { width, height } = container.getBoundingClientRect();
         const svg = d3.select(container)
@@ -152,7 +127,6 @@ class GraphComponent extends Component {
             .attr("width", width)
             .attr("height", height)
             .attr("id", "starmap");
-        // .call(zoom);
 
         const edges = data.edges.map(d => Object.create(d));
         const nodes = data.nodes.map(d => Object.create(d));
@@ -177,29 +151,11 @@ class GraphComponent extends Component {
         const label = node.append("text")
             .text(d => `*${d.label}*`)
             .attr('x', 6)
-            .attr('y', 3)
-            .attr("fill", d => {
-                switch (d.label) {
-                    case startNode:
-                        return startNodeColor;
-                    case endNode:
-                        return endNodeColor;
-                    default:
-                        return null;
-                }
-            })
-            .attr("opacity", d => {
-                switch (d.label) {
-                    case startNode:
-                        return 1;
-                    case endNode:
-                        return 1;
-                    default:
-                        return 0;
-                }
-            });
+            .attr('y', 3);
 
-        let step = 0;
+
+        let step = 0,
+            self = this;
 
         simulation.on("tick", () => {
             link
@@ -220,7 +176,6 @@ class GraphComponent extends Component {
 
                 // workaround: add visual effects only after simulation has stopped
                 link
-                    .attr("opacity", 0.1)
                     .attr("stroke-width", d => +d.cost / 2)
                     .attr("stroke", d => d3.interpolateRdYlGn(1 - +d.cost))
                     .attr("data-source", d => d.source.index)
@@ -228,37 +183,25 @@ class GraphComponent extends Component {
 
                 node
                     .attr("data-id", (d, i) => `${i}`)
+                    .attr("data-label", d => `${d.label}`)
+                    .attr("class", d => {
+                        switch (d.label) {
+                            case self.state.startNode:
+                                return "group startPlanet"
+                            case self.state.endNode:
+                                return "group endPlanet"
+                            default:
+                                return "group"
 
-                circle
-                    .attr("r", d => {
-                        switch (d.label) {
-                            case startNode:
-                                return 5;
-                            case endNode:
-                                return 5;
-                            default:
-                                return Math.random() * 3;
-                        }
-                    })
-                    .attr("fill", d => {
-                        switch (d.label) {
-                            case startNode:
-                                return startNodeColor;
-                            case endNode:
-                                return endNodeColor;
-                            default:
-                                return d3.interpolateOranges(Math.random());
-                        }
-                    })
-                    .attr("class", d => d.label)
-                    .attr("opacity", d => {
-                        switch (d.label) {
-                            case startNode:
-                                return 1;
-                            default:
-                                return 0.3;
                         }
                     });
+
+                circle
+                    .attr("r", d => Math.random() * 3)
+                    .attr("fill", d => d3.interpolateOranges(Math.random()));
+
+                label
+                    .attr("fill", "white");
             }
         });
     }

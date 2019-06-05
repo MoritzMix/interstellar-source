@@ -1,0 +1,36 @@
+#starmap line {
+  opacity: 0.1;
+  transition: opacity 0.3s;
+}
+
+#starmap line.activeLane {
+  opacity: 0.6;
+  stroke-width: 1px;
+}
+
+#starmap .group circle {
+  opacity: 0.3;
+  transition: opacity 0.3s;
+}
+
+#starmap .group text {
+  font-family: "Orbitron";
+  opacity: 0;
+}
+
+#starmap .group .activePlanet,
+#starmap .group.startPlanet circle,
+#starmap .group.endPlanet circle {
+  opacity: 1;
+  r: 3;
+}
+
+#starmap .group.startPlanet text {
+  fill: #479030;
+  opacity: 0.8;
+}
+
+#starmap .group.endPlanet text {
+  fill: #479030;
+  opacity: 0.8;
+}

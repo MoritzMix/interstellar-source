@@ -9,16 +9,6 @@
   height: 100vh;
 }
 
-#starmap line,
-#starmap circle,
-#starmap text {
-  transition: opacity 0.15s;
-}
-
-#starmap text {
-  font-family: "Orbitron";
-}
-
 .planetList {
   align-items: flex-start;
   display: flex;
@@ -32,6 +22,10 @@
   margin-right: 20px;
   opacity: 1;
   animation: fadeIn .3s;
+}
+
+.planetList li:last-child {
+  width: 100%;
 }
 
 @keyframes fadeIn{

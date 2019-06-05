@@ -5,7 +5,7 @@ import Select from "react-dropdown-select";
 import { AppConsumer } from "../data/store"
 import appEmitter from "../helper/appEmitter"
 
-let Subscription = null;
+import "./header.css"
 
 class Header extends Component {
 
@@ -13,9 +13,11 @@ class Header extends Component {
     super(props);
   }
 
-  
+  changeStart(node) {
+    appEmitter.emit('changeStart', node);
+  }
+
   changeEnd(node) {
-    console.log("emite", node)
     appEmitter.emit('changeEnd', node);
   }
 
@@ -26,38 +28,37 @@ class Header extends Component {
   render() {
 
     let options = this.props.context.dataJson.nodes;
-
     return <header
-      style={{
-        alignItems: "flex-end",
-        background: `#1b1b1b`,
-        borderBottom: "5px solid #6EAB1B",
-        color: `#6EAB1B`,
-        display: "flex",
-        fontFamily: 'Orbitron',
-        gridArea: "header",
-        padding: "20px"
-      }}
+      className="header"
+
     >
-      <h1 style={{ margin: 0, fontSize: "50px" }}>
+      <h1>
         Interstellar
       </h1>
-      <p style={{
-        marginLeft: "10px"
-      }}>von Moritz Mix</p>
-      <Select 
-      options={options} 
-      key={options} 
-      values={[{label: "b3-r7-r4nd7"}]}
-      onChange={(values) => this.changeEnd(values[0].label)} />
+      <a href="https://github.com/MoritzMix/interstellar-source" target="_blank">von Moritz Mix</a>
+
+      <div className="select-container">
+        <Select
+          className="start"
+          options={options}
+          key={options.label}
+          color="#6eab1b"
+          values={[{ label: "Erde" }]}
+          onChange={values => this.changeStart(values[0].label)} />
+        <Select
+          className="end"
+          options={options}
+          key={options.label}
+          color="#6eab1b"
+          values={[{ label: "b3-r7-r4nd7" }]}
+          onChange={values => this.changeEnd(values[0].label)} />
+      </div>
     </header>
   }
 }
-
 
 export default React.forwardRef((props, ref) => (
   <AppConsumer>
     {context => <Header {...props} context={context} ref={ref} />}
   </AppConsumer>
 ));
-
